@@ -1,10 +1,19 @@
 import { FC } from "react";
+import { Route, Routes } from "react-router-dom";
+import Home from "./views/Home";
+import SignUp from "./views/SignUp";
+import Container from "./components/common/Container";
 
-const App: FC = () => {
+interface Props {}
+
+const App: FC<Props> = () => {
   return (
-    <div>
-      <h1>HI</h1>
-    </div>
+    <Container>
+      <Routes>
+        <Route path="/" element={<Home />}></Route>
+        <Route path="/sign-up" element={<SignUp />}></Route>
+      </Routes>
+    </Container>
   );
 };
 
