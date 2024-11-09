@@ -3,6 +3,8 @@ import { Route, Routes } from "react-router-dom";
 import Home from "./views/Home";
 import SignUp from "./views/SignUp";
 import Container from "./components/common/Container";
+import Verify from "./views/Verify";
+import NewUser from "./views/NewUser";
 
 interface Props {}
 
@@ -12,6 +14,8 @@ const App: FC<Props> = () => {
       <Routes>
         <Route path="/" element={<Home />}></Route>
         <Route path="/sign-up" element={<SignUp />}></Route>
+        <Route path="/verify" element={<Verify />}></Route>
+        <Route path="/new-user" element={<NewUser />}></Route>
       </Routes>
     </Container>
   );
