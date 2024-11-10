@@ -15,16 +15,30 @@ interface Props {
 export interface IAuthContext {
   profile: AuthState["profile"];
   status: AuthState["status"];
+  signOut(): void;
 }
 
 export const AuthContext = createContext<IAuthContext>({
   profile: null,
   status: "unauthenticated",
+  signOut() {},
 });
 
 const AuthProvider: FC<Props> = ({ children }) => {
   const { profile, status } = useSelector(getAuthState);
   const dispatch = useDispatch();
+
+  const signOut = async () => {
+    try {
+      dispatch(updateAuthStatus("busy"));
+      await client.post("/auth/logout");
+      dispatch(updateAuthStatus("unauthenticated"));
+      dispatch(updateProfile(null));
+    } catch (error) {
+      console.log(error);
+      dispatch(updateAuthStatus("unauthenticated"));
+    }
+  };
 
   useEffect(() => {
     client
@@ -37,10 +51,10 @@ const AuthProvider: FC<Props> = ({ children }) => {
         dispatch(updateProfile(null));
         dispatch(updateAuthStatus("unauthenticated"));
       });
-  }, []);
+  }, [dispatch]);
 
   return (
-    <AuthContext.Provider value={{ profile, status }}>
+    <AuthContext.Provider value={{ profile, status, signOut }}>
       {children}
     </AuthContext.Provider>
   );
