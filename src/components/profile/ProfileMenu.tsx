@@ -63,7 +63,6 @@ const ProfileMenu: FC<Props> = ({ profile, signOut }) => {
               <DropdownLink title="My Orders" to="/orders" />
             </DropdownItem>
           </DropdownSection>
-
           {role === "user" ? (
             <DropdownSection showDivider>
               <DropdownItem key="analytics">Analytics</DropdownItem>
@@ -78,7 +77,9 @@ const ProfileMenu: FC<Props> = ({ profile, signOut }) => {
             <DropdownItem textValue="empty item" className="p-0"></DropdownItem>
           )}
 
-          <DropdownItem key="configurations">Profile</DropdownItem>
+          <DropdownItem key="profile" textValue="Profile" className="p-0">
+            <DropdownLink title="Profile" to="/profile" />
+          </DropdownItem>
           <DropdownItem key="help_and_feedback">Help & Feedback</DropdownItem>
           <DropdownItem onClick={signOut} key="logout" color="danger">
             Log Out
