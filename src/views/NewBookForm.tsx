@@ -5,9 +5,7 @@ interface Props {}
 
 const NewBookForm: FC<Props> = () => {
   return (
-    <BookForm
-      title="Publish New Book"
-      submitBtnTitle="Publish New Book"></BookForm>
+    <BookForm title="Publish New Book" submitBtnTitle="Publish New Book" />
   );
 };
 
