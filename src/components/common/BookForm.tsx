@@ -12,6 +12,8 @@ import { z } from "zod";
 import { genreList, genres, languageList, languages } from "../../utils/data";
 import PosterSelector from "../PosterSelector";
 import RichEditor from "../rich-editor";
+import ErrorList from "./ErrorList";
+import clsx from "clsx";
 
 interface Props {
   title: string;
@@ -69,7 +71,7 @@ const commonBookSchema = {
   publicationName: z
     .string({ required_error: "Invalid publication name!" })
     .trim()
-    .min(3, "Description is too short!"),
+    .min(3, "Publication name is too short!"),
   uploadMethod: z.enum(["aws", "local"], {
     message: "Upload method is missing!",
   }),
@@ -107,6 +109,9 @@ const BookForm: FC<Props> = ({ title, submitBtnTitle }) => {
   const [bookInfo, setBookInfo] = useState<DefaultForm>(defaultBookInfo);
   const [cover, setCover] = useState("");
   const [isForUpdate, setIsForUpdate] = useState(false);
+  const [errors, setErrors] = useState<{
+    [key: string]: string[] | undefined;
+  }>();
 
   const handleTextChange: ChangeEventHandler<HTMLInputElement> = ({
     target,
@@ -141,12 +146,28 @@ const BookForm: FC<Props> = ({ title, submitBtnTitle }) => {
 
     // Validate book file (must be epub type)
     if (file?.type !== "application/epub") {
-      return console.log("Please select a valid (.epub) file.");
+      return setErrors({
+        ...errors,
+        file: ["Please select a valid (.epub) file."],
+      });
+    } else {
+      setErrors({
+        ...errors,
+        file: undefined,
+      });
     }
 
     // Validate cover file
     if (cover && !cover.type.startsWith("image/")) {
-      return console.log("Please select a poster.");
+      return setErrors({
+        ...errors,
+        cover: ["Please select a valid poster file."],
+      });
+    } else {
+      setErrors({
+        ...errors,
+        cover: undefined,
+      });
     }
 
     if (cover) {
@@ -175,7 +196,7 @@ const BookForm: FC<Props> = ({ title, submitBtnTitle }) => {
 
     const result = newBookSchema.safeParse(bookToSend);
     if (!result.success) {
-      return console.log(result.error.flatten().fieldErrors);
+      return setErrors(result.error.flatten().fieldErrors);
     }
 
     console.log(result.data);
@@ -194,24 +215,28 @@ const BookForm: FC<Props> = ({ title, submitBtnTitle }) => {
     <form onSubmit={handleSubmit} className="p-10 space-y-6">
       <h1 className="pb-6 font-semibold text-2xl w-full">{title}</h1>
 
-      <label htmlFor="file">
-        <span>Select File: </span>
-        <input
-          accept="application/epub+zip"
-          type="file"
-          name="file"
-          id="file"
-          onChange={handleFileChange}
-        />
-      </label>
+      <div>
+        <label className={clsx(errors?.file && " text-red-400")} htmlFor="file">
+          <span>Select File: </span>
+          <input
+            accept="application/epub+zip"
+            type="file"
+            name="file"
+            id="file"
+            onChange={handleFileChange}
+          />
+        </label>
+
+        <ErrorList errors={errors?.file} />
+      </div>
 
       <PosterSelector
         src={cover}
         name="cover"
-        // isInvalid
         fileName={bookInfo.cover?.name}
-        // errorMessage="This is the very long long file name.png"
         onChange={handleFileChange}
+        isInvalid={errors?.cover ? true : false}
+        errorMessage={<ErrorList errors={errors?.cover} />}
       />
 
       <Input
@@ -222,15 +247,17 @@ const BookForm: FC<Props> = ({ title, submitBtnTitle }) => {
         placeholder="Think & Grow Rich"
         value={bookInfo.title}
         onChange={handleTextChange}
+        isInvalid={errors?.title ? true : false}
+        errorMessage={<ErrorList errors={errors?.title} />}
       />
 
       <RichEditor
         placeholder="About Book..."
-        // isInvalid
-        // errorMessage="Something is wrong"
         value={bookInfo.description}
         editable
         onChange={(description) => setBookInfo({ ...bookInfo, description })}
+        isInvalid={errors?.description ? true : false}
+        errorMessage={<ErrorList errors={errors?.description} />}
       />
 
       <Input
@@ -241,6 +268,8 @@ const BookForm: FC<Props> = ({ title, submitBtnTitle }) => {
         placeholder="Penguin Book"
         value={bookInfo.publicationName}
         onChange={handleTextChange}
+        isInvalid={errors?.publicationName ? true : false}
+        errorMessage={<ErrorList errors={errors?.publicationName} />}
       />
 
       <DatePicker
@@ -251,6 +280,8 @@ const BookForm: FC<Props> = ({ title, submitBtnTitle }) => {
         label="Publish Date"
         showMonthAndYearPickers
         isRequired
+        isInvalid={errors?.publishedAt ? true : false}
+        errorMessage={<ErrorList errors={errors?.publishedAt} />}
       />
 
       <Autocomplete
@@ -259,7 +290,10 @@ const BookForm: FC<Props> = ({ title, submitBtnTitle }) => {
         defaultSelectedKey={bookInfo.language}
         onSelectionChange={(key = "") => {
           setBookInfo({ ...bookInfo, language: key as string });
-        }}>
+        }}
+        isInvalid={errors?.language ? true : false}
+        errorMessage={<ErrorList errors={errors?.language} />}
+        isRequired>
         {languages.map((item) => {
           return (
             <AutocompleteItem value={item.name} key={item.name}>
@@ -275,7 +309,10 @@ const BookForm: FC<Props> = ({ title, submitBtnTitle }) => {
         defaultSelectedKey={bookInfo.genre}
         onSelectionChange={(key = "") => {
           setBookInfo({ ...bookInfo, genre: key as string });
-        }}>
+        }}
+        isInvalid={errors?.genre ? true : false}
+        errorMessage={<ErrorList errors={errors?.genre} />}
+        isRequired>
         {genres.map((item) => {
           return (
             <AutocompleteItem value={item.name} key={item.name}>
@@ -285,38 +322,47 @@ const BookForm: FC<Props> = ({ title, submitBtnTitle }) => {
         })}
       </Autocomplete>
 
-      <div className="bg-default-100 rounded-md py-2 px-3">
-        <p className="text-xs pl-3">Price*</p>
+      <div>
+        <div className="bg-default-100 rounded-md py-2 px-3">
+          <p className={clsx("text-xs pl-3", errors?.price && " text-red-400")}>
+            Price*
+          </p>
 
-        <div className="flex space-x-6 mt-2">
-          <Input
-            name="mrp"
-            type="number"
-            label="MRP"
-            isRequired
-            placeholder="0.00"
-            value={bookInfo.mrp}
-            onChange={handleTextChange}
-            startContent={
-              <div className="pointer-events-none flex items-center">
-                <span className="text-default-400 text-small">$</span>
-              </div>
-            }
-          />
-          <Input
-            name="sale"
-            type="number"
-            label="Sale Price"
-            isRequired
-            placeholder="0.00"
-            value={bookInfo.sale}
-            onChange={handleTextChange}
-            startContent={
-              <div className="pointer-events-none flex items-center">
-                <span className="text-default-400 text-small">$</span>
-              </div>
-            }
-          />
+          <div className="flex space-x-6 mt-2">
+            <Input
+              name="mrp"
+              type="number"
+              label="MRP"
+              isRequired
+              placeholder="0.00"
+              value={bookInfo.mrp}
+              onChange={handleTextChange}
+              startContent={
+                <div className="pointer-events-none flex items-center">
+                  <span className="text-default-400 text-small">$</span>
+                </div>
+              }
+              isInvalid={errors?.price ? true : false}
+            />
+            <Input
+              name="sale"
+              type="number"
+              label="Sale Price"
+              isRequired
+              placeholder="0.00"
+              value={bookInfo.sale}
+              onChange={handleTextChange}
+              startContent={
+                <div className="pointer-events-none flex items-center">
+                  <span className="text-default-400 text-small">$</span>
+                </div>
+              }
+              isInvalid={errors?.price ? true : false}
+            />
+          </div>
+        </div>
+        <div className="p-2">
+          <ErrorList errors={errors?.price} />
         </div>
       </div>
 
