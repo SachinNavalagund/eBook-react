@@ -12,6 +12,11 @@ import Private from "./routes/Private";
 import Guest from "./routes/Guest";
 import NewBookForm from "./views/NewBookForm";
 import UpdateBookFrom from "./views/UpdateBookFrom";
+import NewAuthorRegistration from "./views/NewAuthorRegistration";
+import UpdateAuthor from "./views/UpdateAuthor";
+import Author from "./routes/Author";
+import NotFound from "./views/NotFound";
+import SingleBook from "./views/SingleBook";
 
 interface Props {}
 
@@ -19,20 +24,32 @@ const App: FC<Props> = () => {
   return (
     <Container>
       <Routes>
-        <Route path="/" element={<Home />}></Route>
-        <Route path="/verify" element={<Verify />}></Route>
+        <Route path="/" element={<Home />} />
+        <Route path="/verify" element={<Verify />} />
+        <Route path="/book/:slug" element={<SingleBook />} />
+        <Route path="/not-found" element={<NotFound />} />
 
         <Route element={<Private />}>
-          <Route path="/profile" element={<Profile />}></Route>
-          <Route path="/update-profile" element={<UpdateProfile />}></Route>
-          <Route path="/new-user" element={<NewUser />}></Route>
-          <Route path="/create-new-book" element={<NewBookForm />}></Route>
-          <Route path="/update-book/:slug" element={<UpdateBookFrom />}></Route>
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/update-profile" element={<UpdateProfile />} />
+          <Route path="/new-user" element={<NewUser />} />
+          <Route
+            path="/author-registration"
+            element={<NewAuthorRegistration />}
+          />
+
+          <Route element={<Author />}>
+            <Route path="/update-author" element={<UpdateAuthor />} />
+            <Route path="/create-new-book" element={<NewBookForm />} />
+            <Route path="/update-book/:slug" element={<UpdateBookFrom />} />
+          </Route>
         </Route>
 
         <Route element={<Guest />}>
-          <Route path="/sign-up" element={<SignUp />}></Route>
+          <Route path="/sign-up" element={<SignUp />} />
         </Route>
+
+        <Route path="*" element={<NotFound />} />
       </Routes>
       <Toaster />
     </Container>

@@ -1,7 +1,7 @@
 import { FC } from "react";
 import useAuth from "../hooks/useAuth";
 import { Avatar, Button } from "@nextui-org/react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { FaPencil } from "react-icons/fa6";
 
 interface Props {}
@@ -12,6 +12,10 @@ const Profile: FC<Props> = () => {
 
   if (!profile) return <Navigate to="/sign-up" />;
 
+  const { role } = profile;
+
+  const isAuthor = role === "author";
+
   return (
     <div className="flex-1 flex flex-col w-full  items-center ">
       <div className="flex min-w-96">
@@ -21,16 +25,27 @@ const Profile: FC<Props> = () => {
           className=" w-20 h-20"
           radius="sm"
         />
-        <div className=" pl-4">
+        <div className=" flex-1 pl-4">
           <p className=" text-xl font-semibold">{profile.name}</p>
           <p className="">{profile.email}</p>
-          <p className="">
-            Role :{" "}
-            <span className=" italic text-sm">
-              {" "}
-              {profile.role.toUpperCase()}
-            </span>
-          </p>
+          <div className="flex items-center justify-between ">
+            <p className="">
+              Role :{" "}
+              <span className=" italic text-sm">
+                {" "}
+                {profile.role.toUpperCase()}
+              </span>
+            </p>
+            {!isAuthor ? (
+              <Link className=" text-xs underline" to="/author-registration">
+                Become an Author
+              </Link>
+            ) : (
+              <Link className=" text-xs underline" to="/update-author">
+                Update Author bio
+              </Link>
+            )}
+          </div>
         </div>
         <Button
           isIconOnly
