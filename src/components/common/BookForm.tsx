@@ -5,7 +5,13 @@ import {
   DatePicker,
   Input,
 } from "@nextui-org/react";
-import { ChangeEventHandler, FC, FormEventHandler, useState } from "react";
+import {
+  ChangeEventHandler,
+  FC,
+  FormEventHandler,
+  useEffect,
+  useState,
+} from "react";
 
 import { parseDate } from "@internationalized/date";
 import { z } from "zod";
@@ -14,15 +20,30 @@ import PosterSelector from "../PosterSelector";
 import RichEditor from "../rich-editor";
 import ErrorList from "./ErrorList";
 import clsx from "clsx";
+import { parserError } from "../../utils/helper";
+
+export interface InitialBookToUpdate {
+  id: string;
+  title: string;
+  description: string;
+  genre: string;
+  language: string;
+  slug: string;
+  cover?: string;
+  price: { mrp: string; sale: string };
+  publicationName: string;
+  publishedAt: string;
+}
 
 interface Props {
   title: string;
   submitBtnTitle: string;
-  initialState?: unknown;
+  initialState?: InitialBookToUpdate;
+  onSubmit(formData: FormData, file?: File | null): Promise<void>;
 }
 
 interface DefaultForm {
-  file?: File;
+  file?: File | null;
   cover?: File;
   title: string;
   description: string;
@@ -51,12 +72,13 @@ interface BookToSubmit {
   language: string;
   publishedAt?: string;
   publicationName: string;
+  slug?: string;
   genre: string;
   price: {
     mrp: number;
     sale: number;
   };
-  fileInfo: {
+  fileInfo?: {
     type: string;
     name: string;
     size: number;
@@ -105,10 +127,21 @@ const newBookSchema = z.object({
   fileInfo: fileInfoSchema,
 });
 
-const BookForm: FC<Props> = ({ title, submitBtnTitle }) => {
+const updateBookSchema = z.object({
+  ...commonBookSchema,
+  fileInfo: fileInfoSchema.optional(),
+});
+
+const BookForm: FC<Props> = ({
+  initialState,
+  title,
+  submitBtnTitle,
+  onSubmit,
+}) => {
   const [bookInfo, setBookInfo] = useState<DefaultForm>(defaultBookInfo);
   const [cover, setCover] = useState("");
   const [isForUpdate, setIsForUpdate] = useState(false);
+  const [busy, setBusy] = useState(false);
   const [errors, setErrors] = useState<{
     [key: string]: string[] | undefined;
   }>();
@@ -130,79 +163,189 @@ const BookForm: FC<Props> = ({ title, submitBtnTitle }) => {
 
     const file = files[0];
 
-    if (name === "cover" && file?.size) {
-      setCover(URL.createObjectURL(file));
-    } else {
-      setCover("");
+    if (name === "cover") {
+      try {
+        setCover(URL.createObjectURL(file));
+      } catch (error) {
+        setCover("");
+      }
     }
-
     setBookInfo({ ...bookInfo, [name]: file });
   };
 
-  const handleBookPublish = () => {
-    const formData = new FormData();
+  const handleBookPublish = async () => {
+    setBusy(true);
+    try {
+      const formData = new FormData();
 
-    const { file, cover } = bookInfo;
+      const { file, cover } = bookInfo;
 
-    // Validate book file (must be epub type)
-    if (file?.type !== "application/epub") {
-      return setErrors({
-        ...errors,
-        file: ["Please select a valid (.epub) file."],
-      });
-    } else {
-      setErrors({
-        ...errors,
-        file: undefined,
-      });
+      // Validate book file (must be epub type)
+      if (file?.type !== "application/epub") {
+        return setErrors({
+          ...errors,
+          file: ["Please select a valid (.epub) file."],
+        });
+      } else {
+        setErrors({
+          ...errors,
+          file: undefined,
+        });
+      }
+
+      // Validate cover file
+      if (cover && !cover.type.startsWith("image/")) {
+        return setErrors({
+          ...errors,
+          cover: ["Please select a valid poster file."],
+        });
+      } else {
+        setErrors({
+          ...errors,
+          cover: undefined,
+        });
+      }
+
+      if (cover) {
+        formData.append("cover", cover);
+      }
+
+      // validate data for book creation
+      const bookToSend: BookToSubmit = {
+        title: bookInfo.title,
+        description: bookInfo.description,
+        genre: bookInfo.genre,
+        language: bookInfo.language,
+        publicationName: bookInfo.publicationName,
+        uploadMethod: "aws",
+        publishedAt: bookInfo.publishedAt,
+        price: {
+          mrp: Number(bookInfo.mrp),
+          sale: Number(bookInfo.sale),
+        },
+        fileInfo: {
+          name: file.name,
+          size: file.size,
+          type: file.type,
+        },
+      };
+
+      const result = newBookSchema.safeParse(bookToSend);
+      if (!result.success) {
+        return setErrors(result.error.flatten().fieldErrors);
+      }
+
+      for (let key in bookToSend) {
+        type keyType = keyof typeof bookToSend;
+
+        const value = bookToSend[key as keyType];
+
+        if (typeof value === "string") {
+          formData.append(key, value);
+        }
+
+        if (typeof value === "object") {
+          formData.append(key, JSON.stringify(value));
+        }
+      }
+
+      await onSubmit(formData, file);
+      setBookInfo({ ...defaultBookInfo, file: null });
+      setCover("");
+    } catch (error) {
+      parserError(error);
+    } finally {
+      setBusy(false);
     }
-
-    // Validate cover file
-    if (cover && !cover.type.startsWith("image/")) {
-      return setErrors({
-        ...errors,
-        cover: ["Please select a valid poster file."],
-      });
-    } else {
-      setErrors({
-        ...errors,
-        cover: undefined,
-      });
-    }
-
-    if (cover) {
-      formData.append("cover", cover);
-    }
-
-    // validate data for book creation
-    const bookToSend: BookToSubmit = {
-      title: bookInfo.title,
-      description: bookInfo.description,
-      genre: bookInfo.genre,
-      language: bookInfo.language,
-      publicationName: bookInfo.publicationName,
-      uploadMethod: "aws",
-      publishedAt: bookInfo.publishedAt,
-      price: {
-        mrp: Number(bookInfo.mrp),
-        sale: Number(bookInfo.sale),
-      },
-      fileInfo: {
-        name: file.name,
-        size: file.size,
-        type: file.type,
-      },
-    };
-
-    const result = newBookSchema.safeParse(bookToSend);
-    if (!result.success) {
-      return setErrors(result.error.flatten().fieldErrors);
-    }
-
-    console.log(result.data);
   };
 
-  const handleBookUpdate = () => {};
+  const handleBookUpdate = async () => {
+    setBusy(true);
+    try {
+      const formData = new FormData();
+
+      const { file, cover } = bookInfo;
+
+      // Validate book file (must be epub type)
+      if (file && file?.type !== "application/epub") {
+        return setErrors({
+          ...errors,
+          file: ["Please select a valid (.epub) file."],
+        });
+      } else {
+        setErrors({
+          ...errors,
+          file: undefined,
+        });
+      }
+
+      // Validate cover file
+      if (cover && !cover.type.startsWith("image/")) {
+        return setErrors({
+          ...errors,
+          cover: ["Please select a valid poster file."],
+        });
+      } else {
+        setErrors({
+          ...errors,
+          cover: undefined,
+        });
+      }
+
+      if (cover) {
+        formData.append("cover", cover);
+      }
+
+      // validate data for book creation
+      const bookToSend: BookToSubmit = {
+        title: bookInfo.title,
+        description: bookInfo.description,
+        genre: bookInfo.genre,
+        language: bookInfo.language,
+        publicationName: bookInfo.publicationName,
+        uploadMethod: "aws",
+        publishedAt: bookInfo.publishedAt,
+        slug: initialState?.slug,
+        price: {
+          mrp: Number(bookInfo.mrp),
+          sale: Number(bookInfo.sale),
+        },
+      };
+
+      if (file) {
+        bookToSend.fileInfo = {
+          name: file.name,
+          size: file.size,
+          type: file.type,
+        };
+      }
+
+      const result = updateBookSchema.safeParse(bookToSend);
+      if (!result.success) {
+        return setErrors(result.error.flatten().fieldErrors);
+      }
+
+      for (let key in bookToSend) {
+        type keyType = keyof typeof bookToSend;
+
+        const value = bookToSend[key as keyType];
+
+        if (typeof value === "string") {
+          formData.append(key, value);
+        }
+
+        if (typeof value === "object") {
+          formData.append(key, JSON.stringify(value));
+        }
+      }
+
+      await onSubmit(formData, file);
+    } catch (error) {
+      parserError(error);
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const handleSubmit: FormEventHandler<HTMLFormElement> = (evt) => {
     evt.preventDefault();
@@ -210,6 +353,36 @@ const BookForm: FC<Props> = ({ title, submitBtnTitle }) => {
     if (isForUpdate) handleBookUpdate();
     else handleBookPublish();
   };
+
+  useEffect(() => {
+    if (initialState) {
+      const {
+        title,
+        description,
+        language,
+        genre,
+        publicationName,
+        publishedAt,
+        price,
+        cover,
+      } = initialState;
+
+      if (cover) setCover(cover);
+
+      setBookInfo({
+        title,
+        description,
+        language,
+        genre,
+        publicationName,
+        publishedAt,
+        mrp: price.mrp,
+        sale: price.sale,
+      });
+
+      setIsForUpdate(true);
+    }
+  }, [initialState]);
 
   return (
     <form onSubmit={handleSubmit} className="p-10 space-y-6">
@@ -288,6 +461,7 @@ const BookForm: FC<Props> = ({ title, submitBtnTitle }) => {
         label="Language"
         placeholder="Select a Language"
         defaultSelectedKey={bookInfo.language}
+        selectedKey={bookInfo.language}
         onSelectionChange={(key = "") => {
           setBookInfo({ ...bookInfo, language: key as string });
         }}
@@ -307,6 +481,7 @@ const BookForm: FC<Props> = ({ title, submitBtnTitle }) => {
         label="Genre"
         placeholder="Select a Genre"
         defaultSelectedKey={bookInfo.genre}
+        selectedKey={bookInfo.genre}
         onSelectionChange={(key = "") => {
           setBookInfo({ ...bookInfo, genre: key as string });
         }}
@@ -366,7 +541,7 @@ const BookForm: FC<Props> = ({ title, submitBtnTitle }) => {
         </div>
       </div>
 
-      <Button type="submit" className="w-full">
+      <Button isLoading={busy} type="submit" className="w-full">
         {submitBtnTitle}
       </Button>
     </form>

@@ -27,7 +27,7 @@ const App: FC<Props> = () => {
           <Route path="/update-profile" element={<UpdateProfile />}></Route>
           <Route path="/new-user" element={<NewUser />}></Route>
           <Route path="/create-new-book" element={<NewBookForm />}></Route>
-          <Route path="/update-book" element={<UpdateBookFrom />}></Route>
+          <Route path="/update-book/:slug" element={<UpdateBookFrom />}></Route>
         </Route>
 
         <Route element={<Guest />}>

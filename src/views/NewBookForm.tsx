@@ -1,11 +1,33 @@
 import { FC } from "react";
 import BookForm from "../components/common/BookForm";
+import client from "../api/client";
+import axios from "axios";
+import toast from "react-hot-toast";
 
 interface Props {}
 
 const NewBookForm: FC<Props> = () => {
+  const handleSubmit = async (data: FormData, file?: File | null) => {
+    const res = await client.post("/book/create", data);
+    if (res.data && file) {
+      axios.put(res.data, file, {
+        headers: {
+          "Content-Type": "application/octet-stream",
+        },
+      });
+
+      toast.success(
+        "Congratulations, Your book has been published. It may take some time to reflect the changes.",
+        { duration: 5000 }
+      );
+    }
+  };
   return (
-    <BookForm title="Publish New Book" submitBtnTitle="Publish New Book" />
+    <BookForm
+      onSubmit={handleSubmit}
+      title="Publish New Book"
+      submitBtnTitle="Publish New Book"
+    />
   );
 };
 
