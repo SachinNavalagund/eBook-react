@@ -5,7 +5,7 @@ export interface Props {
   items?: number;
 }
 
-const Orders: FC<Props> = ({ items = 3 }): JSX.Element => {
+const OrdersSkeleton: FC<Props> = ({ items = 3 }): JSX.Element => {
   const fakeData = new Array(items).fill("");
 
   return (
@@ -43,4 +43,4 @@ const Orders: FC<Props> = ({ items = 3 }): JSX.Element => {
   );
 };
 
-export default Orders;
+export default OrdersSkeleton;

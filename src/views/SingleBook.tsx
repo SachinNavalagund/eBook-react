@@ -12,13 +12,10 @@ const SingleBook: FC<Props> = () => {
   const [busy, setBusy] = useState(true);
   const { slug } = useParams();
 
-  console.log(slug);
-
   useEffect(() => {
     const fetchBookDetail = async () => {
       try {
         const { data } = await client.get(`/book/details/${slug}`);
-        console.log(data);
 
         setBookDetails(data.book);
       } catch (error) {

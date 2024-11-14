@@ -7,7 +7,6 @@ interface Props {}
 
 const Home: FC<Props> = () => {
   const authStatus = useAuth();
-  console.log(authStatus);
 
   return (
     <div className=" space-y-10 px-5 lg:p-0">

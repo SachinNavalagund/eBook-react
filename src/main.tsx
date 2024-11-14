@@ -9,15 +9,18 @@ import { BrowserRouter } from "react-router-dom";
 import { Provider } from "react-redux";
 import store from "./store/index.ts";
 import AuthProvider from "./context/AuthProvider.tsx";
+import CartProvider from "./context/CartProvider.tsx";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <BrowserRouter>
       <Provider store={store}>
         <AuthProvider>
-          <NextUIProvider>
-            <App />
-          </NextUIProvider>
+          <CartProvider>
+            <NextUIProvider>
+              <App />
+            </NextUIProvider>
+          </CartProvider>
         </AuthProvider>
       </Provider>
     </BrowserRouter>

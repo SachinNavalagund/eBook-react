@@ -11,10 +11,13 @@ import { Link } from "react-router-dom";
 import { FaCartShopping } from "react-icons/fa6";
 import ProfileOptions from "../profile/ProfileOptions";
 import DarkModeSwitch from "./DarkModeSwitch";
+import useCart from "../../hooks/useCart";
 
 interface Props {}
 
 const NavBar: FC<Props> = () => {
+  const { totalCount } = useCart();
+
   return (
     <NextUINav>
       <NavbarBrand>
@@ -30,7 +33,7 @@ const NavBar: FC<Props> = () => {
         </NavbarItem>
         <NavbarItem>
           <Link to="/cart">
-            <Badge color="danger" content={0} shape="circle">
+            <Badge color="danger" content={totalCount} shape="circle">
               <FaCartShopping size={24} />
             </Badge>
           </Link>
