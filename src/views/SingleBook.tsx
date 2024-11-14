@@ -2,37 +2,13 @@ import { FC, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import client from "../api/client";
 import { parserError } from "../utils/helper";
+import BookDetail, { Book } from "../components/BookDetail";
+import BookDetails from "../components/skeletons/BookDetails";
 
 interface Props {}
 
-interface BookDetail {
-  id: string;
-  title: string;
-  genre: string;
-  language: string;
-  slug: string;
-  description: string;
-  publicationName: string;
-  publishedAt: string;
-  cover?: string;
-  rating?: string;
-  author: {
-    id: string;
-    name: string;
-    slug: string;
-  };
-  fileInfo: {
-    id: string;
-    size: string;
-  };
-  price: {
-    mrp: number;
-    sale: number;
-  };
-}
-
 const SingleBook: FC<Props> = () => {
-  const [bookDetails, setBookDetails] = useState<BookDetail>();
+  const [bookDetails, setBookDetails] = useState<Book>();
   const [busy, setBusy] = useState(true);
   const { slug } = useParams();
 
@@ -55,9 +31,18 @@ const SingleBook: FC<Props> = () => {
     fetchBookDetail();
   }, [slug]);
 
-  console.log(bookDetails);
+  if (busy)
+    return (
+      <div className="p-5 lg:pt-2">
+        <BookDetails />
+      </div>
+    );
 
-  return <div>{JSON.stringify(bookDetails)}</div>;
+  return (
+    <div className="p-5 lg:pt-2">
+      <BookDetail book={bookDetails} />
+    </div>
+  );
 };
 
 export default SingleBook;
