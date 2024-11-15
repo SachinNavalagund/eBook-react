@@ -20,6 +20,10 @@ import SingleBook from "./views/SingleBook";
 import CartSkeleton from "./views/Cart";
 import PaymentSuccess from "./views/PaymentSuccess";
 import Orders from "./views/Orders";
+import ReviewForm from "./views/ReviewForm";
+import AuthorPage from "./views/AuthorPage";
+import Library from "./views/Library";
+import ReadingPage from "./views/ReadingPage";
 
 interface Props {}
 
@@ -32,13 +36,17 @@ const App: FC<Props> = () => {
         <Route path="/book/:slug" element={<SingleBook />} />
         <Route path="/not-found" element={<NotFound />} />
         <Route path="/cart" element={<CartSkeleton />} />
+        <Route path="/author/:id" element={<AuthorPage />} />
 
         <Route element={<Private />}>
           <Route path="/profile" element={<Profile />} />
           <Route path="/orders" element={<Orders />} />
+          <Route path="/library" element={<Library />} />
+          <Route path="/read/:slug" element={<ReadingPage />} />
           <Route path="/payment-success" element={<PaymentSuccess />} />
           <Route path="/update-profile" element={<UpdateProfile />} />
           <Route path="/new-user" element={<NewUser />} />
+          <Route path="/rate/:bookId" element={<ReviewForm />} />
           <Route
             path="/author-registration"
             element={<NewAuthorRegistration />}

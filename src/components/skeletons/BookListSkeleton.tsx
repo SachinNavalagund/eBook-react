@@ -5,7 +5,7 @@ interface Props {
   itemsCount?: number;
 }
 
-const BookList: FC<Props> = ({ itemsCount = 5 }) => {
+const BookListSkeleton: FC<Props> = ({ itemsCount = 5 }) => {
   const fakeData = new Array(5).fill("");
 
   return (
@@ -30,4 +30,4 @@ const BookList: FC<Props> = ({ itemsCount = 5 }) => {
   );
 };
 
-export default BookList;
+export default BookListSkeleton;
